@@ -4,7 +4,7 @@ package yrs
 // The -ldl is sometimes necessary to fix linker errors about `dlsym`.
 
 /*
-#cgo LDFLAGS: -lyrs -L ./lib
+#cgo LDFLAGS: -L ./lib -lyrs -lm -ldl
 #include "./include/libyrs.h"
 #include <stdlib.h>
 */
@@ -88,7 +88,9 @@ func NewYOutput(ptr *C.YOutput) *YOutput {
 // GetValueAsString tries to convert the YOutput value to a Go string
 func (yo *YOutput) GetValueAsString() (string, error) {
 	if yo.ptr.tag == C.Y_JSON_STR {
-		return C.GoString(yo.ptr.value.str), nil
+		// 解析 ptr.value 作为字符串
+		strPtr := *(**C.char)(unsafe.Pointer(&yo.ptr.value[0]))
+		return C.GoString(strPtr), nil
 	}
 	return "", errors.New("value is not a string")
 }
@@ -96,7 +98,9 @@ func (yo *YOutput) GetValueAsString() (string, error) {
 // GetValueAsInt tries to convert the YOutput value to a Go int
 func (yo *YOutput) GetValueAsInt() (int64, error) {
 	if yo.ptr.tag == C.Y_JSON_INT {
-		return int64(yo.ptr.value.integer), nil
+		// 解析 ptr.value 作为 int64
+		intVal := *(*int64)(unsafe.Pointer(&yo.ptr.value[0]))
+		return int64(intVal), nil
 	}
 	return 0, errors.New("value is not an integer")
 }
@@ -104,7 +108,9 @@ func (yo *YOutput) GetValueAsInt() (int64, error) {
 // GetValueAsBool tries to convert the YOutput value to a Go bool
 func (yo *YOutput) GetValueAsBool() (bool, error) {
 	if yo.ptr.tag == C.Y_JSON_BOOL {
-		return yo.ptr.value.flag == C.Y_TRUE, nil
+		// 解析 ptr.value 作为 bool
+		boolVal := *(*C.int8_t)(unsafe.Pointer(&yo.ptr.value[0]))
+		return boolVal == C.Y_TRUE, nil
 	}
 	return false, errors.New("value is not a boolean")
 }
@@ -166,10 +172,11 @@ func (iter *YMapIter) YMapEntryNext() *YMapEntry {
 	return goEntry
 }
 
-// GetValueAsString assumes the value is a string and returns it
 func (entry *YMapEntry) GetValueAsString() (string, error) {
 	if entry.Value.ptr.tag == C.Y_JSON_STR {
-		return C.GoString(entry.Value.ptr.value.str), nil
+		// 将value数组的第一个元素地址转换为 *C.char
+		strPtr := *(**C.char)(unsafe.Pointer(&entry.Value.ptr.value[0]))
+		return C.GoString(strPtr), nil
 	}
 	return "", errors.New("value is not a string")
 }

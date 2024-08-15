@@ -18,24 +18,48 @@ package main
 
 import (
 	"fmt"
-	"yffigo/yrs"
+	"log"
+	"yffigo/yrs" // 根据实际路径调整导入路径
 )
 
 func main() {
-	// 假设你已经有了 YMap 和 YTransaction 的实例
-	var yMap *yrs.YMap
-	var txn *yrs.YTransaction
+	// 初始化一个YDoc
+	doc := yrs.NewYDoc()
+	if doc == nil {
+		log.Fatal("Failed to create YDoc")
+	}
+	defer doc.Destroy() // 确保在退出前销毁YDoc
 
-	// 迭代 YMap 中的所有键值对
-	iter := yMap.YMapIter(txn)
-	defer iter.YMapIterDestroy()
+	doc.GetDocID()
 
-	for entry := iter.YMapEntryNext(); entry != nil; entry = iter.YMapEntryNext() {
-		valueStr, err := entry.GetValueAsString()
-		if err != nil {
-			fmt.Printf("Error retrieving string value for key %s: %v\n", entry.Key, err)
-			continue
-		}
-		fmt.Printf("Key: %s, Value: %s\n", entry.Key, valueStr)
+	// 获取或创建一个YMap
+	ymap := doc.GetYMap("exampleMap")
+	if ymap == nil {
+		log.Fatal("Failed to create or get YMap")
+	}
+
+	// 向YMap添加一些数据
+	err := ymap.Set("key1", "value1")
+	if err != nil {
+		log.Fatalf("Failed to set value in YMap: %v", err)
+	}
+
+	// 添加更多数据
+	err = ymap.Set("key2", "value2")
+	if err != nil {
+		log.Fatalf("Failed to set value in YMap: %v", err)
+	}
+
+	// 使用迭代器遍历YMap
+	iter := ymap.NewIterator()
+	for iter.HasNext() {
+		key, value := iter.Next()
+		fmt.Printf("Key: %s, Value: %s\n", key, value)
+	}
+
+	// 假设有一个保存或同步的方法
+	err = doc.Save()
+	if err != nil {
+		log.Fatalf("Failed to save document: %v", err)
 	}
 }
