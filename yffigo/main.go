@@ -22,42 +22,20 @@ import (
 )
 
 func main() {
-	doc := yrs.NewYDoc()
-	defer doc.Destroy()
-
-	txn := doc.WriteTransaction("")
-	defer txn.Commit()
-
-	// 创建一个 YMap 类型
-	yMap := doc.GetYMap("example_map")
-
-	// 插入一个字符串键值对到 YMap
-	inputStr := yrs.NewYInputString("value1")
-	defer inputStr.Free()
-	yMap.YMapInsert(txn, "key1", inputStr)
-
-	// 插入一个整数键值对到 YMap
-	inputInt := yrs.NewYInputInt(123)
-	defer inputInt.Free()
-	yMap.YMapInsert(txn, "key2", inputInt)
-
-	// 获取键为 "key1" 的值
-	output := yMap.YMapGet(txn, "key1")
-	if output != nil {
-		fmt.Println("Key1 Value:", output.GetValueAsString())
-	}
-
-	// 获取键为 "key2" 的值
-	output = yMap.YMapGet(txn, "key2")
-	if output != nil {
-		fmt.Println("Key2 Value:", output.GetValueAsInt())
-	}
+	// 假设你已经有了 YMap 和 YTransaction 的实例
+	var yMap *yrs.YMap
+	var txn *yrs.YTransaction
 
 	// 迭代 YMap 中的所有键值对
 	iter := yMap.YMapIter(txn)
 	defer iter.YMapIterDestroy()
 
 	for entry := iter.YMapEntryNext(); entry != nil; entry = iter.YMapEntryNext() {
-		fmt.Printf("Key: %s, Value: %v\n", entry.Key, entry.GetValueAsString()) // 这里假设所有值都是字符串
+		valueStr, err := entry.GetValueAsString()
+		if err != nil {
+			fmt.Printf("Error retrieving string value for key %s: %v\n", entry.Key, err)
+			continue
+		}
+		fmt.Printf("Key: %s, Value: %s\n", entry.Key, valueStr)
 	}
 }
